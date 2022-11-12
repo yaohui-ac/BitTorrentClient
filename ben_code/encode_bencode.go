@@ -8,6 +8,7 @@ import (
 )
 
 func (b *BenCode) EncodeToBytes() []byte {
+	//统一接口解析
 	switch b.BenType {
 
 	case consts.STRING:
