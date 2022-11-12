@@ -2,6 +2,10 @@ package ben_code
 
 import "BitTorrentClient/consts"
 
+type benCodeKV struct {
+	key string
+	val *BenCode
+}
 type BenCode struct {
 	BenType  consts.BenObjType
 	BenValue consts.BenValue
