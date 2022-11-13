@@ -11,21 +11,22 @@ import (
 )
 
 const (
-	MessageHeadLen = 4
+	TcpMessageHeadLen = 4
 )
+
 type TcpReadStatus int
 
 const (
 	Read_Finish TcpReadStatus = 1
-	On_Read		TcpReadStatus = 2
+	On_Read     TcpReadStatus = 2
 )
+
 type TcpReader struct {
 	conn        *net.TCPConn
 	buf         []byte
 	haveReadIdx int64
 	haveHandIdx int
-	readStatus TcpReadStatus
-	
+	readStatus  TcpReadStatus
 }
 
 func NewTcpReader(conn *net.TCPConn) *TcpReader {
@@ -38,7 +39,7 @@ func NewTcpReader(conn *net.TCPConn) *TcpReader {
 	return t
 }
 func (t *TcpReader) GetBytes() ([]byte, error) {
-	if (t.readStatus == Read_Finish) {
+	if t.readStatus == Read_Finish {
 		t.haveReadIdx = 0
 		t.haveHandIdx = -1
 	}
@@ -52,23 +53,23 @@ func (t *TcpReader) GetBytes() ([]byte, error) {
 		return nil, errors.New("remote closed")
 	}
 	t.haveReadIdx += int64(cnt)
-	if int64(t.haveHandIdx+MessageHeadLen) > t.haveReadIdx {
+	if int64(t.haveHandIdx+TcpMessageHeadLen) > t.haveReadIdx {
 		fmt.Println("need next read from remote 1")
 		t.readStatus = On_Read
 		return nil, nil //代表还需要下一次读取
 	}
-	messageLen = binary.LittleEndian.Uint32(t.buf[t.haveHandIdx+1 : t.haveHandIdx+1+MessageHeadLen])
-	if int64(t.haveHandIdx)+int64(messageLen)+MessageHeadLen > t.haveReadIdx {
+	messageLen = binary.LittleEndian.Uint32(t.buf[t.haveHandIdx+1 : t.haveHandIdx+1+TcpMessageHeadLen])
+	if int64(t.haveHandIdx)+int64(messageLen)+TcpMessageHeadLen > t.haveReadIdx {
 		fmt.Println("need next read from remote 2")
 		t.readStatus = On_Read
 		return nil, nil
 	}
 
 	defer func() {
-		t.haveHandIdx += int(MessageHeadLen + messageLen)
+		t.haveHandIdx += int(TcpMessageHeadLen + messageLen)
 	}()
 	t.readStatus = Read_Finish //复位
-	return t.buf[t.haveHandIdx+1+MessageHeadLen : t.haveHandIdx+1+MessageHeadLen+int(messageLen)], nil
+	return t.buf[t.haveHandIdx+1+TcpMessageHeadLen : t.haveHandIdx+1+TcpMessageHeadLen+int(messageLen)], nil
 
 }
 func SplitExpression(str string) (num1 int64, num2 int64, err error) {

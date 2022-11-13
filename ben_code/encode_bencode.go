@@ -3,6 +3,7 @@ package ben_code
 import (
 	"BitTorrentClient/consts"
 	"bytes"
+	"io"
 	"sort"
 	"strconv"
 )
@@ -70,4 +71,8 @@ func EncodeDictToByte(dict map[string]*BenCode) []byte {
 	buffer.WriteRune('e')
 	return buffer.Bytes()
 
+}
+func (b *BenCode) EncodeToWriter(w io.Writer) error {
+	_, err := w.Write(b.EncodeToBytes())
+	return err
 }
