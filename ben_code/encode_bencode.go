@@ -34,10 +34,16 @@ func EncodeStrToByte(str string) []byte {
 	message := strLen + ":" + str
 	return []byte(message)
 }
+func EncodeStr(w io.Writer, str string) {
+	_, _ = w.Write(EncodeStrToByte(str))
+}
 func EncodeIntToByte(val int64) []byte {
 	strVal := strconv.FormatInt(val, 10)
 	message := "i" + strVal + "e"
 	return []byte(message)
+}
+func EncodeInt(w io.Writer, val int64) {
+	_, _ = w.Write(EncodeIntToByte(val))
 }
 func EncodeListToByte(benCodes []*BenCode) []byte {
 	buffer := new(bytes.Buffer)

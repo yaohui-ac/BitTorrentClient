@@ -19,3 +19,5 @@ const (
 	LIST    BenObjType = 3
 	DICT    BenObjType = 4
 )
+
+const BenCodeTag = "bencode"

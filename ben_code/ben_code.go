@@ -39,3 +39,17 @@ func (b *BenCode) Dict() (map[string]*BenCode, error) {
 	}
 	return b.BenValue.(map[string]*BenCode), nil
 }
+
+func (b *BenCode) StrWithNoErr() string {
+	return b.BenValue.(string)
+}
+func (b *BenCode) IntegerWithNoErr() int64 {
+	return b.BenValue.(int64)
+}
+
+func (b *BenCode) ListWithNoErr() []*BenCode {
+	return b.BenValue.([]*BenCode)
+}
+func (b *BenCode) DictWithNoErr() map[string]*BenCode {
+	return b.BenValue.(map[string]*BenCode)
+}

@@ -13,7 +13,6 @@ func BytesToBenCode(bytes []byte) (*BenCode, error) {
 	return nil, nil
 }
 func DecodeBencode(r io.Reader) (*BenCode, error) {
-	//todo
 	bufReader := bufio.NewReader(r)
 	preview, err := bufReader.Peek(1)
 	benCode := new(BenCode)
@@ -84,9 +83,10 @@ func DecodeString(r io.Reader) (str string, err error) {
 func parseInteger(r *bufio.Reader) (int64, error) {
 	var num int64 = 0
 	sign := 1
-	b, _ := r.ReadByte()
-	if b == '-' {
+	b, _ := r.Peek(1) //查看符号位
+	if b[0] == '-' {
 		sign = -1
+		_, _ = r.ReadByte()
 	}
 	for {
 		bytes, err := r.ReadByte()
@@ -154,7 +154,7 @@ func DecodeDict(r io.Reader) (map[string]*BenCode, error) {
 	mp := make(map[string]*BenCode)
 	b, err := bufReader.ReadByte()
 	if err != nil {
-		//todo
+		return nil, err
 	}
 	if b != 'd' {
 		return nil, errors.New("待定")
