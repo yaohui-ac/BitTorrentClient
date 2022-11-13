@@ -4,6 +4,7 @@ import (
 	"BitTorrentClient/consts"
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -24,6 +25,7 @@ func DecodeBencode(r io.Reader) (*BenCode, error) {
 		//字符串
 		str, err := DecodeString(bufReader)
 		if err != nil {
+			fmt.Println("s", err)
 			return nil, err
 		}
 		benCode.BenType = consts.STRING
@@ -32,6 +34,7 @@ func DecodeBencode(r io.Reader) (*BenCode, error) {
 	case preview[0] == 'i':
 		num, err := DecodeInteger(bufReader)
 		if err != nil {
+			fmt.Println("i", err)
 			return nil, err
 		}
 		benCode.BenType = consts.INTEGER
@@ -40,6 +43,7 @@ func DecodeBencode(r io.Reader) (*BenCode, error) {
 	case preview[0] == 'l':
 		lists, err := DecodeList(bufReader)
 		if err != nil {
+			fmt.Println("l", err)
 			return nil, err
 		}
 		benCode.BenType = consts.LIST
@@ -48,6 +52,7 @@ func DecodeBencode(r io.Reader) (*BenCode, error) {
 	case preview[0] == 'd':
 		dict, err := DecodeDict(bufReader)
 		if err != nil {
+			fmt.Println("d", err)
 			return nil, err
 		}
 		benCode.BenType = consts.DICT
@@ -62,7 +67,8 @@ func DecodeString(r io.Reader) (str string, err error) {
 	bufReader := bufio.NewReader(r)
 	strLen, err := parseInteger(bufReader) //解析长度
 	if err != nil {
-		return "", errors.New("待定")
+
+		return "", errors.New("待定1")
 	}
 	if strLen <= 0 {
 		return "", errors.New("xx")
@@ -70,12 +76,12 @@ func DecodeString(r io.Reader) (str string, err error) {
 
 	b, _ := bufReader.ReadByte()
 	if b != ':' {
-		return "", errors.New("待定")
+		return "", errors.New("待定2")
 	}
 
 	str, err = parseString(bufReader, strLen) //解析后面的字符串
 	if err != nil {
-		return "", errors.New("待定")
+		return "", errors.New("待定3")
 	}
 
 	return str, nil
@@ -105,6 +111,7 @@ func parseString(r *bufio.Reader, strLen int64) (string, error) {
 	bytes := make([]byte, strLen)
 	n, err := io.ReadFull(r, bytes)
 	if int64(n) != strLen || err != nil {
+		fmt.Println(n, err)
 		return "", errors.New("待定")
 	}
 	return string(bytes), nil
