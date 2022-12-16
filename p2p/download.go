@@ -7,6 +7,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 )
 
@@ -63,14 +64,84 @@ func (p *pieceProgress) readMessage() error {
 	}
 	return nil
 }
+func (t *Torrent) calculateBoundsForPiece(index int) (begin int, end int) {
+	begin = index * t.PieceLength
+	end = begin + t.PieceLength
+	if end > t.Length {
+		end = t.Length
+	}
+	return begin, end
+}
+func (t *Torrent) caculatePieceSize(index int) int {
+	begin, end := t.calculateBoundsForPiece(index)
+	return end - begin
+}
+func (t *Torrent) startDownloadWorker(peer peers.Peer, WorkQueue chan *pieceWork, result chan *pieceResult) {
+	c, err := torrentClient.NewTorrentClient(peer, t.PeerID, t.InfoHash)
+	if err != nil {
+		log.Printf("Could not handshake with %s. Disconnecting\n", peer.IP)
+		return
+	}
+	defer func() {
+		_ = c.Conn.Close()
+	}()
+	log.Printf("Completed handshake with %s\n", peer.IP)
+	_ = c.SendUnchoke()
+	_ = c.SendInterested()
 
-func (t *Torrent) Download([]byte, error) {
+	for pw := range WorkQueue {
+		if !c.Bitfield.HasPiece(pw.index) {
+			//下载完成 重新写入
+			WorkQueue <- pw //
+			continue
+		}
+		buf, err := attemptDownloadPiece(c, pw)
+		if err != nil {
+			log.Println("Exiting", err)
+			// 出错了，把任务放回队列
+			WorkQueue <- pw // Put piece back on the queue
+			return
+		}
+		// 校验
+		err = checkIntegrity(pw, buf)
+		if err != nil {
+			log.Printf("Piece #%d failed integrity check\n", pw.index)
+			WorkQueue <- pw // Put piece back on the queue
+			continue
+		}
+		//告知对端
+		_ = c.SendHave(pw.index)
+		result <- &pieceResult{pw.index, buf}
+	}
+}
+func (t *Torrent) Download() ([]byte, error) {
 	log.Println("Starting download: Name ", t.Name)
-	//workQueue := make(chan *pieceWork, len(t.PieceHashes))
-	//results := make(chan *pieceResult)
-	//for i, hash := range t.PieceHashes {
-	//	length := t.
-	//}
+	workQueue := make(chan *pieceWork, len(t.PieceHashes))
+	results := make(chan *pieceResult)
+	for i, hash := range t.PieceHashes {
+		length := t.caculatePieceSize(i)
+		//生产写入
+		workQueue <- &pieceWork{i, hash, length}
+	}
+	for _, peer := range t.Peers {
+		go t.startDownloadWorker(peer, workQueue, results)
+	}
+
+	buf := make([]byte, t.Length)
+	donePieces := 0
+	for donePieces < len(t.PieceHashes) {
+		res := <-results
+		begin, end := t.calculateBoundsForPiece(res.index)
+		copy(buf[begin:end], res.buf)
+		donePieces++
+
+		percent := float64(donePieces) / float64(len(t.PieceHashes)) * 100
+		numWorkers := runtime.NumGoroutine() - 1
+		log.Printf("(%0.2f%%) Downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
+
+	}
+	close(workQueue)
+	return buf, nil
 
 }
 func attemptDownloadPiece(c *torrentClient.Client, pw *pieceWork) ([]byte, error) {

@@ -3,6 +3,7 @@ package torrent
 import (
 	"BitTorrentClient/ben_code"
 	"BitTorrentClient/p2p"
+	"bytes"
 	"io"
 )
 
@@ -49,7 +50,15 @@ func SingleTorrentParser(reader io.Reader) (s *SingleTorrent, err error) {
 	err = ben_code.Unmarshal(reader, s)
 	return s, err
 }
-
+func (bto *SingleTorrent) fileParser(file []byte) error {
+	// 可以进行 反序列化 key value取值
+	// fileMetaData, er := bencode.Decode(file)
+	// if er != nil {
+	// }
+	//fmt.Println(fileMetaData)
+	err := ben_code.Unmarshal(bytes.NewReader(file), &bto)
+	return err
+}
 func (s *SingleTorrent) toTorrentFile() (TorrentFile, error) {
 	infoHash, err := hash(s.Info)
 	if err != nil {

@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"BitTorrentClient/conf"
+	"fmt"
+)
 
 func main() {
-	fmt.Println("main run")
+	err := conf.ReadConf()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 }
